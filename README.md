@@ -1,7 +1,7 @@
 # neo4j-to-html (NtH): Neo4j Query Visualization Tool
 
 ## Overview
-NtH is a web-based tool that allows users to execute Neo4j Cypher queries and visualize the results dynamically. Designed for researchers, developers, and data analysts, NeoVis simplifies graph database exploration by providing an intuitive and interactive interface.
+NtH is a web-based tool that allows users to execute Neo4j Cypher queries and visualize the results dynamically. Designed for researchers, developers, and data analysts, NtH simplifies graph database exploration by providing an intuitive and interactive interface.
 
 ## Features
 - Execute **Neo4j Cypher queries** directly from the UI
