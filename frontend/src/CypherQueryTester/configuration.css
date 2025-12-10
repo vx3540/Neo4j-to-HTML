@@ -1,84 +1,239 @@
+/* =============================
+   configuration.css
+   ============================= */
+
 .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; 
-    width: 100vw; 
-    min-height: 100vh; 
-    padding: 20px;
-    font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 100vh;
+  padding: 2rem 1.25rem;
+  font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #555;
+  background: #f8fafc; /* soft slate */
+  box-sizing: border-box;
 }
 
+/* Spinner for "Connecting..." */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .title {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 20px;
+  font-family: "Craw Modern Bold", system-ui, sans-serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  color: #222;
+  letter-spacing: 0.06em;
+  text-align: center;
 }
 
+.subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Card that wraps the login + node list */
+.config-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  padding: 2rem;
+  box-shadow:
+    0 10px 15px -10px rgba(15, 23, 42, 0.2),
+    0 4px 6px -4px rgba(15, 23, 42, 0.15);
+  box-sizing: border-box;
+}
+
+/* =============================
+   Inputs
+   ============================= */
+
 .input-container-cf {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .input-field {
-    padding: 12px; 
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    width: 500px;
-    height: 40px;
-    font-size: 18px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  width: 100%;
+  font-size: 0.95rem;
+  background: #f9fafb;
+  color: #111827;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
 }
 
-button {
-    padding: 12px 24px; 
-    font-size: 18px; 
-    border-radius: 8px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
+.input-field:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
 }
 
-button:hover {
-    background-color: #0056b3;
+/* Password toggle button inside input */
+.password-toggle {
+  font-size: 0.8rem;
+  color: #4b5563;
 }
+
+/* =============================
+   Buttons (scoped to config page)
+   ============================= */
+
+.config-btn {
+  padding: 0.65rem 1.2rem;
+  font-size: 0.95rem;
+  border-radius: 0.6rem;
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.18s ease, transform 0.1s ease, box-shadow 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.config-btn:hover {
+  background-color: #1f2937;
+  box-shadow: 0 8px 15px -12px rgba(15, 23, 42, 0.7);
+  transform: translateY(-1px);
+}
+
+.config-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+.config-btn.secondary {
+  background-color: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.config-btn.secondary:hover {
+  background-color: #e5e7eb;
+}
+
+/* =============================
+   Error text
+   ============================= */
 
 .error-message {
-    color: red;
-    margin-top: 10px;
-}
-.nodes-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px; 
-    justify-content: center;
-    align-items: center;
-    margin-top: 30px;
-    max-width: 1000px; 
+  color: #b91c1c;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
+/* =============================
+   Node list
+   ============================= */
+
+.nodes-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  justify-content: center;
+  align-items: stretch;
+  margin-top: 1.5rem;
+  max-width: 100%;
+}
 
 .node-box {
-    border: 2px solid #007bff;
-    background: #f8f9fa;
-    padding: 20px; 
-    border-radius: 12px;
-    cursor: pointer;
-    width: 220px; 
-    height: 100px; 
-    text-align: center;
-    font-weight: bold;
-    font-size: 18px;
-    transition: transform 0.2s, background 0.3s;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.9rem 0.75rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #111827;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .node-box:hover {
-    background: #007bff;
-    color: white;
-    transform: scale(1.05);
+  background: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -12px rgba(15, 23, 42, 0.6);
+}
+
+/* Section under node list (Add Configuration, Contribution) */
+.section-divider {
+  margin: 2.5rem auto 1.5rem auto;
+  max-width: 900px;
+  text-align: center;
+}
+
+/* Smaller helper text */
+.helper-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Config / Contribution cards inside the page */
+.sub-card {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 2rem auto;
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem 1.75rem;
+  box-shadow:
+    0 8px 12px -10px rgba(15, 23, 42, 0.2),
+    0 2px 4px -2px rgba(15, 23, 42, 0.1);
+  box-sizing: border-box;
+}
+
+/* Textarea for contribution */
+.textarea-field {
+  width: 100%;
+  min-height: 140px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  resize: vertical;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #f9fafb;
+  color: #111827;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+}
+
+.textarea-field:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
 }
