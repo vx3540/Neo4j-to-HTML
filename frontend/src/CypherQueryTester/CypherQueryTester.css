@@ -1,170 +1,238 @@
+/* =============================
+   CypherQueryTester.css
+   ============================= */
 
-.cypher-query-results {
+.page-container {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #eef2ff 0, #ffffff 55%);
+  font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
+  color: #111827;
+}
+
+/* ===== Header ===== */
+
+.header-box {
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  margin-top: 0px;
-}
-
-.results-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-
-textarea {
-  width: 100%;
-  height: 150px;
-  margin-bottom: 10px;
-}
-
-.highlight {
-  animation: highlight-animation 1s ease-in-out;
-}
-
-@keyframes highlight-animation {
-  0% {
-    background-color: #ffeb3b;
-    color: black;
-  }
-  50% {
-    background-color: #ffd700;
-    color: black;
-  }
-  100% {
-    background-color: #007bff;
-    color: white;
-  }
-}
-
-body {
-  background: linear-gradient(to right, #ece9e6, #ffffff);
-  font-family: 'Poppins', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  height: 90vh; 
-  width: 100vw;
-  overflow: auto; 
-  margin: 0;
-  padding: 0;
-}
-
-
-.cypher-query-tester {
-  width: 95vw;
-  height: 90vh; 
-  margin: 20px auto;
-  padding: 20px;
-  overflow: hidden; 
+  max-width: 70rem;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 1.5rem 1.25rem;
+  border-bottom-left-radius: 1.25rem;
+  border-bottom-right-radius: 1.25rem;
   background: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  text-align: center;
+  box-shadow:
+    0 10px 15px -10px rgba(15, 23, 42, 0.2),
+    0 4px 6px -4px rgba(15, 23, 42, 0.15);
+  animation: fadeIn 0.4s ease-in-out;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .header-text {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  letter-spacing: 0.03em;
+}
+
+.subtitle {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-top: 0.1rem;
+}
+
+/* Error bar under header title */
+.error-box {
+  margin-top: 0.25rem;
+  color: #b91c1c;
+  font-weight: 500;
+  background: #fee2e2;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+/* ===== Controls row ===== */
+
+.query-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .query-controls {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* Button used for Visualize */
+.visualize-btn {
+  padding: 0.6rem 1.4rem;
+  color: #ffffff;
+  font-weight: 600;
+  background: #111827;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  box-shadow:
+    0 8px 15px -12px rgba(15, 23, 42, 0.8),
+    0 2px 4px -2px rgba(15, 23, 42, 0.5);
+  transition: background 0.18s ease, transform 0.08s ease, box-shadow 0.18s ease;
+}
+
+.visualize-btn:hover {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 24px -18px rgba(15, 23, 42, 1),
+    0 4px 6px -4px rgba(15, 23, 42, 0.7);
+}
+
+.visualize-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 4px 10px -6px rgba(15, 23, 42, 0.7),
+    0 1px 3px -1px rgba(15, 23, 42, 0.6);
+}
+
+/* ===== Results area ===== */
+
+.results-section {
+  width: 100%;
+  max-width: 88rem;
+  margin: 1.25rem auto 0 auto;
+  min-height: 64vh;
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 18px 30px -18px rgba(15, 23, 42, 0.35),
+    0 8px 16px -10px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.results-frame {
+  width: 100%;
+  height: 70vh;
+  border: none;
+}
+
+.results-placeholder {
+  width: 100%;
+  height: 70vh;
+  display: flex;
   align-items: center;
-  transition: transform 0.3s ease-in-out;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 1.05rem;
+  text-align: center;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
-.cypher-query-tester:hover {
-  transform: translateY(-5px);
+/* ===== Logout button ===== */
+
+.logout-section {
+  /* position: fixed; */
+  bottom: 1.5rem;
+  right: 1.5rem;
+  left: 1.5rem;
+  z-index: 40;
 }
 
-.error {
-  color: #d9534f;
-  font-weight: bold;
-  margin-bottom: 15px;
-  background: #fdecea;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-select, input {
-  width: 30%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-  background: #f8f9fa;
-  transition: all 0.3s ease-in-out;
-}
-
-select:hover, input:hover {
-  border-color: #3498db;
-}
-
-select:focus, input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-}
-
-button {
-  width: 30%;
-  padding: 14px;
-  margin-top: 15px;
-  font-size: 16px;
-  font-weight: bold;
+.logout-btn {
+  background: #b91c1c;
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
-  background: linear-gradient(to right, #007bff, #0056b3);
-  color: white;
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  font-weight: 600;
+  right: 3rem;
+  box-shadow:
+    0 12px 20px -15px rgba(185, 28, 28, 0.9),
+    0 4px 8px -6px rgba(127, 29, 29, 0.7);
+  transition: background 0.18s ease, transform 0.08s ease, box-shadow 0.18s ease;
 }
 
-button:hover {
-  background: linear-gradient(to right, #0056b3, #004494);
-  transform: scale(1.05);
+.logout-btn:hover {
+  background: #991b1b;
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 28px -18px rgba(185, 28, 28, 1),
+    0 6px 12px -8px rgba(127, 29, 29, 0.8);
 }
 
-.view-results-button {
-  margin-top: 10px;
-  background: linear-gradient(to right, #28a745, #218838);
-  color: white;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 6px 12px -10px rgba(185, 28, 28, 0.8),
+    0 2px 4px -2px rgba(127, 29, 29, 0.7);
 }
 
-.view-results-button.highlight {
-  box-shadow: 0 0 15px rgba(40, 167, 69, 0.8);
-  animation: glow 1s infinite alternate;
-}
-
-@keyframes glow {
-  from {
-      box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
-  }
-  to {
-      box-shadow: 0 0 20px rgba(40, 167, 69, 1);
-  }
-}
-
-.view-results-button:hover {
-  background: linear-gradient(to right, #218838, #1e7e34);
-  transform: scale(1.05);
-}
-
-.logout-button {
-  position: fixed;
-  bottom: 20px; 
-  left: 50%; 
-  transform: translateX(-50%);
-  background: linear-gradient(90deg, #ff4500, #ff9800);
-  border: none;
-  padding: 10px 20px;
-  width: 200px;
-  height: 50px;
-  color: white;
-  border-radius: 5px;
+/* Optional back button styling if you keep it */
+.back-btn {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
   cursor: pointer;
-  transition: background 0.3s ease-in-out;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background 0.18s ease, transform 0.08s ease, box-shadow 0.18s ease;
 }
-.logout-button:hover {
-  background: linear-gradient(90deg, #d43f00, #e68a00);
-  transform: translateX(-50%) scale(1.05); 
+
+.back-btn:hover {
+  background: #e5e7eb;
+  box-shadow: 0 4px 10px -6px rgba(148, 163, 184, 0.9);
+  transform: translateY(-1px);
+}
+
+/* So iframe doesn't stick to edges on very small screens */
+@media (max-width: 640px) {
+  .header-box {
+    border-radius: 0;
+    box-shadow:
+      0 6px 10px -8px rgba(15, 23, 42, 0.2),
+      0 2px 4px -4px rgba(15, 23, 42, 0.15);
+  }
+
+  .results-section {
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
