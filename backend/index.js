@@ -9,6 +9,11 @@ app.use(cors());
 app.use(express.json());
 app.post("/connect", async (req, res) => {
   const { uri, username, password } = req.body;
+if (!/^neo4j(\+s|\+ssc)?:\/\//.test(uri) && !/^bolt(\+s|\+ssc)?:\/\//.test(uri)) {
+  return res.status(400).json({
+    error: "Invalid Neo4j URI scheme. Use neo4j:// or neo4j+s://",
+  });
+}
 
   if (!uri || !username || !password) {
     return res.status(400).json({ error: "Missing required parameters" });
@@ -31,6 +36,11 @@ app.post("/connect", async (req, res) => {
 });
 app.post("/query", async (req, res) => {
   const { cypher, uri, username, password } = req.body;
+if (!/^neo4j(\+s|\+ssc)?:\/\//.test(uri) && !/^bolt(\+s|\+ssc)?:\/\//.test(uri)) {
+  return res.status(400).json({
+    error: "Invalid Neo4j URI scheme. Use neo4j:// or neo4j+s://",
+  });
+}
 
   if (!cypher || !uri || !username || !password) {
     return res.status(400).json({ error: "Missing required parameters" });

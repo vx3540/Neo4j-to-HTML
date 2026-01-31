@@ -1,0 +1,191 @@
+/* =============================
+   JsonImportPage.css
+   ============================= */
+
+.json-import-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 2.5rem 1.25rem;
+  box-sizing: border-box;
+  background: radial-gradient(circle at top, #eef2ff 0%, #ffffff 55%);
+  font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #111827;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== Card wrapper ===== */
+
+.json-import-container > h1 {
+  font-family: "Craw Modern Bold", system-ui, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1d4ed8;
+  margin-bottom: 0.5rem;
+}
+
+.json-import-container .helper-text {
+  font-size: 0.95rem;
+  color: #4b5563;
+  max-width: 720px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== Main card ===== */
+
+.json-preview,
+.json-import-container input[type="file"] {
+  width: 100%;
+  max-width: 900px;
+}
+
+.json-preview {
+  min-height: 320px;
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+
+  box-shadow:
+    0 8px 12px -10px rgba(15, 23, 42, 0.25),
+    0 2px 4px -2px rgba(15, 23, 42, 0.15);
+
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.json-preview:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.4),
+    0 10px 20px -12px rgba(37, 99, 235, 0.4);
+}
+
+/* ===== File input ===== */
+
+.json-import-container input[type="file"] {
+  padding: 0.6rem;
+  background: #ffffff;
+  border-radius: 0.6rem;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 10px -8px rgba(15, 23, 42, 0.2),
+    0 2px 4px -2px rgba(15, 23, 42, 0.15);
+}
+
+/* ===== Buttons ===== */
+
+.button-row {
+  margin-top: 1.75rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.button-row button {
+  padding: 0.6rem 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+
+  background: #111827;
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 15px -12px rgba(15, 23, 42, 0.8),
+    0 2px 4px -2px rgba(15, 23, 42, 0.5);
+
+  transition:
+    background 0.18s ease,
+    transform 0.08s ease,
+    box-shadow 0.18s ease;
+}
+
+.button-row button:hover {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 24px -18px rgba(15, 23, 42, 1),
+    0 4px 6px -4px rgba(15, 23, 42, 0.7);
+}
+
+.button-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Secondary button (Back) */
+.button-row button.secondary {
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.button-row button.secondary:hover {
+  background: #e5e7eb;
+}
+
+/* ===== Error / Status ===== */
+
+.error-box {
+  margin-top: 1rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 500;
+  max-width: 900px;
+  width: 100%;
+}
+
+.status-box {
+  margin-top: 1.2rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.6rem;
+  background: #ecfeff;
+  color: #065f46;
+  font-size: 0.9rem;
+  font-weight: 600;
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+/* ===== Mobile ===== */
+
+@media (max-width: 640px) {
+  .json-preview {
+    min-height: 260px;
+  }
+
+  .button-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button-row button {
+    width: 100%;
+  }
+}

@@ -140,8 +140,41 @@ useEffect(() => {
     setPassword(storedPassword);
     setNodes(JSON.parse(storedNodes));
     setConnected(true);
+    fetchLabels();
   }
 }, []);
+
+const fetchLabels = async () => {
+  try {
+    const storedUri = sessionStorage.getItem("neo4j_uri");
+    const storedUsername = sessionStorage.getItem("neo4j_username");
+    const storedPassword = sessionStorage.getItem("neo4j_password");
+
+    if (!storedUri || !storedUsername || !storedPassword) return;
+
+    const response = await fetch("http://localhost:3001/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uri: storedUri,
+        username: storedUsername,
+        password: storedPassword,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch labels");
+
+    const data = await response.json();
+    const labels = data.labels.map((label) => ({ label }));
+
+    setNodes(labels);
+
+    // update cache so refresh also stays correct
+    sessionStorage.setItem("neo4j_nodes", JSON.stringify(labels));
+  } catch (err) {
+    console.error("Error fetching labels:", err);
+  }
+};
 
 
 const handleSendContribution = async () => {
@@ -197,7 +230,7 @@ const connectToNeo4j = async (retry = true) => {
       setError(data.error || "Failed to connect.");
       if (retry) {
         console.log("Retrying Neo4j connection in 3 seconds...");
-        setTimeout(() => connectToNeo4j(true), 3000); // Retry after 3s
+        setTimeout(() => connectToNeo4j(true), 3000); 
       }
     }
   } catch (err) {
@@ -258,6 +291,7 @@ const connectToNeo4j = async (retry = true) => {
 
       if (response.ok) {
         setConfigMessage("Successfully added.");
+        fetchLabels();
       } else {
         setConfigMessage(data.error || "Failed to add. Please check input.");
       }
@@ -618,7 +652,7 @@ if (loading) {
               </div>
             </div>
 
-           {/* Buttons to choose mode */}
+           
 <div
   style={{
     width: "100%",
@@ -626,9 +660,10 @@ if (loading) {
     margin: "3rem auto 2rem auto",
     display: "flex",
     justifyContent: "center",
+    gap: "1rem",
+    flexWrap: "wrap",
   }}
 >
-
   <button
     onClick={() => {
       setShowConfig(true);
@@ -638,15 +673,45 @@ if (loading) {
       background: "#16a34a",
       color: "white",
       padding: "0.75rem 1.5rem",
-      borderRadius: "4px",
+      borderRadius: "999px",
       border: "none",
       cursor: "pointer",
       fontWeight: 600,
+      fontSize: "0.95rem",
+      boxShadow: "0 6px 12px rgba(22, 163, 74, 0.4)",
     }}
+    onMouseOver={(e) =>
+      (e.currentTarget.style.background = "#15803d")
+    }
+    onMouseOut={(e) =>
+      (e.currentTarget.style.background = "#16a34a")
+    }
   >
-    Add Configuration
+    Add Configuration Manually
   </button>
 
+  <button
+    onClick={() => navigate("/import-json")}
+    style={{
+      background: "#2563eb",
+      color: "white",
+      padding: "0.75rem 1.5rem",
+      borderRadius: "999px",
+      border: "none",
+      cursor: "pointer",
+      fontWeight: 600,
+      fontSize: "0.95rem",
+      boxShadow: "0 6px 12px rgba(37, 99, 235, 0.4)",
+    }}
+    onMouseOver={(e) =>
+      (e.currentTarget.style.background = "#1d4ed8")
+    }
+    onMouseOut={(e) =>
+      (e.currentTarget.style.background = "#2563eb")
+    }
+  >
+    Import from JSON
+  </button>
 </div>
 
 {showConfig && (
@@ -687,6 +752,7 @@ if (loading) {
       >
         Configuration
       </h2>
+      
 
       <SimpleSelect
         value={configType}
