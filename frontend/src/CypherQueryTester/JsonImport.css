@@ -1,6 +1,4 @@
-/* =============================
-   JsonImportPage.css
-   ============================= */
+
 
 .json-import-container {
   width: 100%;
@@ -16,7 +14,7 @@
   align-items: center;
 }
 
-/* ===== Card wrapper ===== */
+
 
 .json-import-container > h1 {
   font-family: "Craw Modern Bold", system-ui, sans-serif;
@@ -35,7 +33,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* ===== Main card ===== */
+
 
 .json-preview,
 .json-import-container input[type="file"] {
@@ -75,7 +73,7 @@
     0 10px 20px -12px rgba(37, 99, 235, 0.4);
 }
 
-/* ===== File input ===== */
+
 
 .json-import-container input[type="file"] {
   padding: 0.6rem;
@@ -89,7 +87,7 @@
     0 2px 4px -2px rgba(15, 23, 42, 0.15);
 }
 
-/* ===== Buttons ===== */
+
 
 .button-row {
   margin-top: 1.75rem;
@@ -135,7 +133,6 @@
   box-shadow: none;
 }
 
-/* Secondary button (Back) */
 .button-row button.secondary {
   background: #f3f4f6;
   color: #111827;
@@ -146,7 +143,6 @@
   background: #e5e7eb;
 }
 
-/* ===== Error / Status ===== */
 
 .error-box {
   margin-top: 1rem;
@@ -173,7 +169,6 @@
   text-align: center;
 }
 
-/* ===== Mobile ===== */
 
 @media (max-width: 640px) {
   .json-preview {
