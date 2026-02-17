@@ -104,6 +104,25 @@ function SimpleSelect({ value, onChange, options, placeholder = "Select...", sty
 }
 
 const ConfigurationPage = () => {
+  const NODE_TEMPLATES = {
+    Book: {
+      label: "Book",
+      fields: ["title", "author", "year", "genre", "language"]
+    },
+    Painting: {
+      label: "Painting",
+      fields: ["title", "artist", "year", "style", "medium"]
+    },
+    DancePerformance: {
+      label: "DancePerformance",
+      fields: ["title", "choreographer", "year", "style", "duration"]
+    },
+    MusicPerformance: {
+      label: "MusicPerformance",
+      fields: ["title", "composer", "year", "genre", "duration"]
+    }
+  };
+
   const [uri, setUri] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -117,7 +136,8 @@ const ConfigurationPage = () => {
 
   const [configType, setConfigType] = useState("");
   const [configLabel, setConfigLabel] = useState("");
-  const [configProps, setConfigProps] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [nodeProperties, setNodeProperties] = useState({});
   const [configMessage, setConfigMessage] = useState("");
   const [relNode1Label, setRelNode1Label] = useState("");
   const [relNode1Prop, setRelNode1Prop] = useState("");
@@ -126,6 +146,27 @@ const ConfigurationPage = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [showContribution, setShowContribution] = useState(false);
   const [contributionText, setContributionText] = useState("");
+
+useEffect(() => {
+  if (!selectedTemplate) {
+    setConfigLabel("");
+    setNodeProperties({ name: "" });
+    return;
+  }
+
+  const template = NODE_TEMPLATES[selectedTemplate];
+  if (!template) return;
+
+  setConfigLabel(template.label);
+
+  const freshProps = {};
+  template.fields.forEach((field) => {
+    freshProps[field] = "";
+  });
+
+  setNodeProperties(freshProps);
+
+}, [selectedTemplate]);
 
 
 useEffect(() => {
@@ -245,20 +286,46 @@ const connectToNeo4j = async (retry = true) => {
   }
 };
 
+  const handleDeleteField = (fieldName) => {
+    setNodeProperties((prev) => {
+      const updated = { ...prev };
+
+      if (Object.keys(updated).length <= 1) {
+        return updated;
+      }
+
+      delete updated[fieldName];
+      return updated;
+    });
+  };
+
+
   const handleAddConfig = async () => {
     setConfigMessage("");
 
-    if (!configLabel) {
-      setConfigMessage("Label or type is required.");
+    if (
+      !configLabel ||
+      (configType === "node" &&
+        Object.values(nodeProperties).every((v) => v === ""))
+    ) {
+      setConfigMessage("Please provide label and at least one property.");
       return;
     }
 
     try {
       let query = "";
 
-      if (configType === "node") {
-        query = `CREATE (n:${configLabel} {${configProps}}) RETURN n`;
-      }
+    if (configType === "node") {
+
+      const propsString = Object.entries(nodeProperties)
+        .filter(([_, value]) => value !== "")
+        .map(([key, value]) =>
+          `${key}: "${value.replace(/"/g, '\\"')}"`
+        )
+        .join(", ");
+
+      query = `CREATE (n:${configLabel} { ${propsString} }) RETURN n`;
+    }
 
       if (configType === "relationship") {
         if (
@@ -291,6 +358,8 @@ const connectToNeo4j = async (retry = true) => {
 
       if (response.ok) {
         setConfigMessage("Successfully added.");
+        setSelectedTemplate("");
+        setNodeProperties({ name: "" });
         fetchLabels();
       } else {
         setConfigMessage(data.error || "Failed to add. Please check input.");
@@ -753,13 +822,13 @@ if (loading) {
         Configuration
       </h2>
       
-
       <SimpleSelect
         value={configType}
         onChange={(val) => {
           setConfigType(val);
           setConfigLabel("");
-          setConfigProps("");
+          setSelectedTemplate("");
+          setNodeProperties({ name: "" });
           setConfigMessage("");
         }}
         options={[
@@ -794,24 +863,120 @@ if (loading) {
               configType === "node" ? "Node Label" : "Relationship Type"
             }
             value={configLabel}
-            onChange={(e) => setConfigLabel(e.target.value)}
+            onChange={(e) =>
+              setConfigLabel(e.target.value.replace(/\s+/g, ""))
+            }
           />
 
-          {configType === "node" ? (
-            <input
-              style={{
-                width: "100%",
-                padding: "0.75rem 1rem",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                fontSize: "0.95rem",
+        {configType === "node" ? (
+          <>
+            <div style={{ marginBottom: "1rem" }}>
+              <label>Select Template:</label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem 1rem",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  marginTop: "0.5rem"
+                }}
+              >
+                <option value="">Other</option>
+                <option value="Book">Book</option>
+                <option value="Painting">Painting</option>
+                <option value="DancePerformance">Dance Performance</option>
+                <option value="MusicPerformance">Music Performance</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const newField = prompt("Enter new field name:");
+                if (!newField) return;
+
+                const cleanedField = newField.trim().replace(/\s+/g, "");
+
+                if (!cleanedField) return;
+
+                if (nodeProperties[cleanedField]) {
+                  alert("Field already exists.");
+                  return;
+                }
+
+                setNodeProperties({
+                  ...nodeProperties,
+                  [cleanedField]: ""
+                });
               }}
-              type="text"
-              placeholder='Properties (e.g., propertyname: "propertyvalue")'
-              value={configProps}
-              onChange={(e) => setConfigProps(e.target.value)}
-            />
-          ) : (
+              style={{
+                background: "#2563eb",
+                color: "white",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                border: "none",
+                cursor: "pointer",
+                marginBottom: "1rem"
+              }}
+            >
+              Add Field
+            </button>
+
+{Object.keys(nodeProperties).map((field) => (
+  <div
+    key={field}
+    style={{
+      marginBottom: "0.75rem",
+      display: "flex",
+      gap: "0.5rem",
+      alignItems: "center"
+    }}
+  >
+    <div style={{ flex: 1 }}>
+      <label>{field}</label>
+      <input
+        type="text"
+        value={nodeProperties[field]}
+        onChange={(e) =>
+          setNodeProperties({
+            ...nodeProperties,
+            [field]: e.target.value
+          })
+        }
+        style={{
+          width: "100%",
+          padding: "0.75rem 1rem",
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+          marginTop: "0.25rem"
+        }}
+      />
+    </div>
+
+    <button
+      type="button"
+      onClick={() => handleDeleteField(field)}
+      style={{
+        background: "#ef4444",
+        color: "white",
+        border: "none",
+        borderRadius: "6px",
+        padding: "0.5rem 0.75rem",
+        cursor: "pointer",
+        height: "40px",
+        marginTop: "1.5rem"
+      }}
+    >
+      ✕
+    </button>
+  </div>
+))}
+
+
+          </>
+        ) : (
             <>
               <input
                 style={{
