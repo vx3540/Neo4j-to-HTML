@@ -13,6 +13,17 @@ db.serialize(() => {
       neo4j_password TEXT
     )
   `);
+  db.run(`
+  CREATE TABLE IF NOT EXISTS connections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    uri TEXT,
+    username TEXT,
+    password TEXT,
+    name TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 });
 
 module.exports = db;

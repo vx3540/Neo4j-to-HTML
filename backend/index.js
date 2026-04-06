@@ -17,11 +17,11 @@ app.use(express.json());
 app.post("/connect", authMiddleware, async (req, res) => {
   let { uri, username, password } = req.body;
 
-  if (!uri) {
-    const user = await new Promise((resolve) => {
+  if (!uri && req.body.connectionId) {
+    const conn = await new Promise((resolve) => {
       db.get(
-        "SELECT neo4j_uri, neo4j_username, neo4j_password FROM users WHERE id=?",
-        [req.user.id],
+        "SELECT uri, username, password FROM connections WHERE id=? AND user_id=?",
+        [req.body.connectionId, req.user.id],
         (err, row) => {
           if (err) return resolve(null);
           resolve(row);
@@ -29,13 +29,13 @@ app.post("/connect", authMiddleware, async (req, res) => {
       );
     });
 
-    if (!user || !user.neo4j_uri) {
-      return res.status(400).json({ error: "No saved credentials found" });
+    if (!conn) {
+      return res.status(400).json({ error: "Connection not found" });
     }
 
-    uri = user.neo4j_uri;
-    username = user.neo4j_username;
-    password = user.neo4j_password;
+    uri = conn.uri;
+    username = conn.username;
+    password = conn.password;
   }
 if (!/^neo4j(\+s|\+ssc)?:\/\//.test(uri) && !/^bolt(\+s|\+ssc)?:\/\//.test(uri)) {
   return res.status(400).json({
@@ -65,11 +65,11 @@ if (!/^neo4j(\+s|\+ssc)?:\/\//.test(uri) && !/^bolt(\+s|\+ssc)?:\/\//.test(uri))
 app.post("/query", authMiddleware, async (req, res) => {
   let { cypher, uri, username, password } = req.body;
 
-  if (!uri) {
-    const user = await new Promise((resolve) => {
+  if (!uri && req.body.connectionId) {
+    const conn = await new Promise((resolve) => {
       db.get(
-        "SELECT neo4j_uri, neo4j_username, neo4j_password FROM users WHERE id=?",
-        [req.user.id],
+        "SELECT uri, username, password FROM connections WHERE id=? AND user_id=?",
+        [req.body.connectionId, req.user.id],
         (err, row) => {
           if (err) return resolve(null);
           resolve(row);
@@ -77,16 +77,13 @@ app.post("/query", authMiddleware, async (req, res) => {
       );
     });
 
-    if (!user || !user.neo4j_uri) {
-      return res.status(400).json({ error: "No saved credentials found" });
+    if (!conn) {
+      return res.status(400).json({ error: "Connection not found" });
     }
 
-    uri = user.neo4j_uri;
-    username = user.neo4j_username;
-    password = user.neo4j_password;
-
-    // In /query, after the DB lookup:
-console.log("Fetched user creds:", user);
+    uri = conn.uri;
+    username = conn.username;
+    password = conn.password;
   }
 if (!/^neo4j(\+s|\+ssc)?:\/\//.test(uri) && !/^bolt(\+s|\+ssc)?:\/\//.test(uri)) {
   return res.status(400).json({
@@ -164,22 +161,37 @@ app.get("/me", authMiddleware, (req, res) => {
   );
 });
 
+app.get("/connections", authMiddleware, (req, res) => {
+  db.all(
+    "SELECT id, uri, username, password, name FROM connections WHERE user_id = ?",
+    [req.user.id],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to fetch connections" });
+      }
+      res.json(rows);
+    }
+  );
+});
+
 app.post("/save-connection", authMiddleware, (req, res) => {
-  const { uri, username, password } = req.body;
+  const { uri, username, password, name } = req.body;
 
   db.run(
-    `UPDATE users 
-     SET neo4j_uri=?, neo4j_username=?, neo4j_password=? 
-     WHERE id=?`,
-    [uri, username, password, req.user.id],
-    () => {
-      res.json({ success: true });
+    `INSERT INTO connections (user_id, uri, username, password, name)
+     VALUES (?, ?, ?, ?, ?)`,
+    [req.user.id, uri, username, password, name || uri],
+    function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Failed to save connection" });
+      }
+      res.json({ success: true, id: this.lastID });
     }
   );
 });
 
 app.post("/sendContribution", authMiddleware, (req, res) => {
-  // your handler
 });
 
 app.listen(PORT, () => {

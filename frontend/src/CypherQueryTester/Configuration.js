@@ -128,6 +128,7 @@ const ConfigurationPage = () => {
   const [password, setPassword] = useState("");
   const [nodes, setNodes] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [connections, setConnections] = useState([]);
 
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -169,6 +170,17 @@ useEffect(() => {
 
 }, [selectedTemplate]);
 
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  fetch("http://localhost:3001/connections", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(res => res.json())
+    .then(setConnections);
+}, []);
 
 useEffect(() => {
   const token = localStorage.getItem("token");
@@ -178,25 +190,6 @@ useEffect(() => {
   }
 }, []);
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-
-  fetch("http://localhost:3001/me", {
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    }
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data?.neo4j_uri) {
-        setUri(data.neo4j_uri);
-        setUsername(data.neo4j_username);
-        setPassword(data.neo4j_password);
-        connectToNeo4j(data.neo4j_uri, data.neo4j_username, data.neo4j_password);
-      }
-    });
-}, []);
 
 const fetchLabels = async () => {
   try {
@@ -208,7 +201,11 @@ const fetchLabels = async () => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({}) // backend uses saved creds
+      body: JSON.stringify({
+        uri,
+        username,
+        password
+      })
     });
 
     if (!response.ok) throw new Error("Failed to fetch labels");
@@ -277,14 +274,26 @@ console.log("Response Data:", data);
       setNodes(data.labels.map((label) => ({ label })));
       setConnected(true);
       setError("");
-      await fetch("http://localhost:3001/save-connection", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ uri, username, password })
-      });
+      if (!connections.some(c => c.uri === (customUri || uri) && c.username === (customUsername || username))) {
+        await fetch("http://localhost:3001/save-connection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            uri: customUri || uri,
+            username: customUsername || username,
+            password: customPassword || password,
+            name: customUri || uri
+          })
+        });
+
+        const updated = await fetch("http://localhost:3001/connections", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setConnections(await updated.json());
+      }
     } else {
       setError(data.error || "Failed to connect.");
       if (!response.ok) {
@@ -365,7 +374,12 @@ console.log("Response Data:", data);
         method: "POST",
         headers: { "Content-Type": "application/json",
                    "Authorization": `Bearer ${token}`},
-        body: JSON.stringify({ cypher: query }),
+        body: JSON.stringify({
+          cypher: query,
+          uri,
+          username,
+          password
+        }),
       });
 
 
@@ -488,7 +502,7 @@ if (loading) {
       fontWeight: "500"
     }}
   >
-    Stop Connection
+    Logout
   </button>
 </div>
       <div
@@ -564,6 +578,29 @@ if (loading) {
                 justifyContent: "center",
               }}
             >
+            <select
+              onChange={(e) => {
+                const selected = connections.find(c => c.id == e.target.value);
+                if (!selected) return;
+
+                setUri(selected.uri);
+                setUsername(selected.username);
+                setPassword(selected.password || "");
+              }}
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+                padding: "1rem",
+                marginBottom: "1rem"
+              }}
+            >
+              <option value="">Select saved connection</option>
+              {connections.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name || c.uri}
+                </option>
+              ))}
+            </select>
               <input
                 style={{
                   width: "100%",
