@@ -146,6 +146,7 @@ const ConfigurationPage = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [showContribution, setShowContribution] = useState(false);
   const [contributionText, setContributionText] = useState("");
+  const [contributionMessage, setContributionMessage] = useState("");
 
 useEffect(() => {
   if (!selectedTemplate) {
@@ -170,37 +171,44 @@ useEffect(() => {
 
 
 useEffect(() => {
-  const storedUri = sessionStorage.getItem("neo4j_uri");
-  const storedUsername = sessionStorage.getItem("neo4j_username");
-  const storedPassword = sessionStorage.getItem("neo4j_password");
-  const storedNodes = sessionStorage.getItem("neo4j_nodes");
+  const token = localStorage.getItem("token");
 
-  if (storedUri && storedUsername && storedPassword && storedNodes) {
-    setUri(storedUri);
-    setUsername(storedUsername);
-    setPassword(storedPassword);
-    setNodes(JSON.parse(storedNodes));
-    setConnected(true);
-    fetchLabels();
+  if (!token) {
+    window.location.href = "/login";
   }
+}, []);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  fetch("http://localhost:3001/me", {
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data?.neo4j_uri) {
+        setUri(data.neo4j_uri);
+        setUsername(data.neo4j_username);
+        setPassword(data.neo4j_password);
+        connectToNeo4j(data.neo4j_uri, data.neo4j_username, data.neo4j_password);
+      }
+    });
 }, []);
 
 const fetchLabels = async () => {
   try {
-    const storedUri = sessionStorage.getItem("neo4j_uri");
-    const storedUsername = sessionStorage.getItem("neo4j_username");
-    const storedPassword = sessionStorage.getItem("neo4j_password");
-
-    if (!storedUri || !storedUsername || !storedPassword) return;
+    const token = localStorage.getItem("token");
 
     const response = await fetch("http://localhost:3001/connect", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uri: storedUri,
-        username: storedUsername,
-        password: storedPassword,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({}) // backend uses saved creds
     });
 
     if (!response.ok) throw new Error("Failed to fetch labels");
@@ -209,9 +217,6 @@ const fetchLabels = async () => {
     const labels = data.labels.map((label) => ({ label }));
 
     setNodes(labels);
-
-    // update cache so refresh also stays correct
-    sessionStorage.setItem("neo4j_nodes", JSON.stringify(labels));
   } catch (err) {
     console.error("Error fetching labels:", err);
   }
@@ -220,9 +225,12 @@ const fetchLabels = async () => {
 
 const handleSendContribution = async () => {
   try {
+    const token = localStorage.getItem("token");
+
     const res = await fetch("http://localhost:3001/sendContribution", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+                 "Authorization": `Bearer ${token}`},
       body: JSON.stringify({
         text: contributionText,
       }),
@@ -243,44 +251,50 @@ const handleSendContribution = async () => {
 
 
 
-const connectToNeo4j = async (retry = true) => {
+const connectToNeo4j = async (customUri, customUsername, customPassword) => {
   setError("");
   setLoading(true);
   console.log("Connecting with:", { uri, username, password });
   try {
+    const token = localStorage.getItem("token");
     const response = await fetch("http://localhost:3001/connect", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uri, username, password }),
+      headers: { "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`},
+      body: JSON.stringify({
+        uri: customUri || uri,
+        username: customUsername || username,
+        password: customPassword || password,
+      }),
     });
 
     const data = await response.json();
 
+    console.log("Response OK:", response.ok);
+console.log("Response Data:", data);
+
     if (response.ok) {
       setNodes(data.labels.map((label) => ({ label })));
       setConnected(true);
-      sessionStorage.setItem("neo4j_uri", uri);
-      sessionStorage.setItem("neo4j_username", username);
-      sessionStorage.setItem("neo4j_password", password);
-      sessionStorage.setItem(
-        "neo4j_nodes",
-        JSON.stringify(data.labels.map((label) => ({ label })))
-      );
       setError("");
+      await fetch("http://localhost:3001/save-connection", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ uri, username, password })
+      });
     } else {
       setError(data.error || "Failed to connect.");
-      if (retry) {
-        console.log("Retrying Neo4j connection in 3 seconds...");
-        setTimeout(() => connectToNeo4j(true), 3000); 
-      }
-    }
+      if (!response.ok) {
+  console.error("Backend error:", data);
+}
+      
+    }  
   } catch (err) {
     setError("Failed to connect. Check your backend/server.");
     console.error("Connection error:", err);
-    if (retry) {
-      console.log("Retrying Neo4j connection in 3 seconds...");
-      setTimeout(() => connectToNeo4j(true), 3000);
-    }
   } finally {
     setLoading(false);
   }
@@ -346,11 +360,12 @@ const connectToNeo4j = async (retry = true) => {
         `;
       }
       console.log("Connecting with:", { uri, username, password });
-
+      const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:3001/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cypher: query, uri, username, password }),
+        headers: { "Content-Type": "application/json",
+                   "Authorization": `Bearer ${token}`},
+        body: JSON.stringify({ cypher: query }),
       });
 
 
@@ -369,17 +384,14 @@ const connectToNeo4j = async (retry = true) => {
       console.error("Add Config Error:", err);
     }
   };
-const handleLogout = () => {
-  sessionStorage.clear();
-  setConnected(false);
-  setNodes([]);
-  setUri("");
-  setUsername("");
-  setPassword("");
-  navigate("/");
-};
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
 
   const handleBrowseFullGraph = () => {
+
     navigate("/cypherquerytester", {
       state: {
         browseFullGraph: true,
@@ -391,16 +403,20 @@ const handleLogout = () => {
   };
 
 
-  const handleNodeClick = (node) => {
-    navigate("/cypherquerytester", {
-      state: {
-        selectedNode: node,
-        uri,
-        username,
-        password,
-      },
-    });
-  };
+const handleNodeClick = (node) => {
+  localStorage.setItem("nodeLabel", node.label);
+  localStorage.setItem("uri", uri);
+localStorage.setItem("username", username);
+localStorage.setItem("password", password);
+  navigate("/cypherquerytester", {
+    state: {
+      selectedNode: node,
+      uri,
+      username,
+      password,
+    },
+  });
+};
 
 
 if (loading) {
@@ -444,6 +460,37 @@ if (loading) {
         color: "#777",
       }}
     >
+<div
+  style={{
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "1rem 2rem",
+    borderBottom: "1px solid #eee",
+    background: "#fff",
+    position: "sticky",
+    top: 0,
+    zIndex: 1000
+  }}
+>
+  <h3 style={{ margin: 0, color: "#333" }}>Neo4j Explorer</h3>
+
+  <button
+    onClick={handleLogout}
+    style={{
+      padding: "0.5rem 1rem",
+      background: "#ef4444",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontWeight: "500"
+    }}
+  >
+    Stop Connection
+  </button>
+</div>
       <div
         style={{
           display: "flex",
@@ -580,7 +627,7 @@ if (loading) {
               </div>
 
               <button
-                onClick={connectToNeo4j}
+                onClick={() => connectToNeo4j()}
                 disabled={loading}
                 style={{
                   width: "100%",
@@ -663,23 +710,6 @@ if (loading) {
                 >
                   Browse Full Graph
                 </button>
-                  <button
-    onClick={handleLogout}
-    style={{
-      background: "#ef4444",
-      color: "white",
-      fontSize: "1rem",
-      padding: "0.75rem 1rem",
-      borderRadius: "8px",
-      border: "none",
-      cursor: "pointer",
-      fontWeight: "600",
-    }}
-    onMouseOver={(e) => (e.currentTarget.style.background = "#dc2626")}
-    onMouseOut={(e) => (e.currentTarget.style.background = "#ef4444")}
-  >
-    Logout
-  </button>
               </div>
 
               <div

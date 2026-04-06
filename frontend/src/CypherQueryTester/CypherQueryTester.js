@@ -205,13 +205,14 @@ function CypherQueryTester() {
   const { state } = useLocation();
   const {
     selectedNode = {},
-    uri = "",
-    username = "",
-    password = "",
+    uri = localStorage.getItem("uri") || "",
+    username = localStorage.getItem("username") || "",
+    password = localStorage.getItem("password") || "",
     browseFullGraph = false,
   } = state || {};
 
-  const { label: nodeLabel } = selectedNode || {};
+  const nodeLabel =
+  selectedNode?.label || localStorage.getItem("nodeLabel");
 
 
 
@@ -228,35 +229,52 @@ const fetchDynamicMenuOptions = async () => {
   if (!nodeLabel) return;
 
   try {
-    let storedUri = sessionStorage.getItem("neo4j_uri");
-    let storedUsername = sessionStorage.getItem("neo4j_username");
-    let storedPassword = sessionStorage.getItem("neo4j_password");
+    const token = localStorage.getItem("token");
 
     const cypher = `
-      MATCH (n:${nodeLabel})-[r]->() RETURN DISTINCT type(r) AS relType, 'OUTGOING' AS direction
+      MATCH (n:\`${nodeLabel}\`)-[r]->()
+      RETURN DISTINCT type(r) AS relType, 'OUTGOING' AS direction
       UNION
-      MATCH (n:${nodeLabel})<-[r]-() RETURN DISTINCT type(r) AS relType, 'INCOMING' AS direction
+      MATCH (n:\`${nodeLabel}\`)<-[r]-()
+      RETURN DISTINCT type(r) AS relType, 'INCOMING' AS direction
     `;
-
+    if (!nodeLabel) {
+  console.error("nodeLabel missing");
+  return;
+}
     const response = await fetch("http://localhost:3001/query", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`},
       body: JSON.stringify({
         cypher,
-        uri: storedUri,
-        username: storedUsername,
-        password: storedPassword,
+        uri,
+        username,
+        password,
       }),
     });
 
-    const result = await response.json();
+const result = await response.json();
 
-    const options = result.map((record) => {
-      const relType = record.relType || record[0];
-      const direction = record.direction || record[1];
+if (!response.ok) {
+  console.error("Backend error:", result);
+  return;
+}
+
+const dataArray = Array.isArray(result) ? result : [];
+
+    const options = dataArray.map((record) => {
+      const relType = record.relType || record._fields?.[0];
+      const direction = record.direction || record._fields?.[1];
+
       return {
         name: `${relType} (${direction})`,
-        query: `MATCH (n:${nodeLabel})${direction === "OUTGOING" ? "-[r:" : "<-[r:"}${relType}]${direction === "OUTGOING" ? "->(m)" : "-(m)"} RETURN n, r, m LIMIT 10`,
+        query: `MATCH (n:\`${nodeLabel}\`)${
+          direction === "OUTGOING" ? "-[r:" : "<-[r:"
+        }${relType}]${
+          direction === "OUTGOING" ? "->(m)" : "-(m)"
+        } RETURN n, r, m LIMIT 10`,
       };
     });
 
@@ -281,7 +299,12 @@ const fetchDynamicMenuOptions = async () => {
     const links = [];
     const nodeTypeColors = {};
 
-    data.forEach((item) => {
+if (!Array.isArray(data)) {
+  console.error("Invalid data:", data);
+  return;
+}
+
+data.forEach((item) => {
       Object.values(item).forEach((entry) => {
         if (entry.startNodeElementId && entry.endNodeElementId && entry.type) {
           links.push({
@@ -1191,16 +1214,18 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
             const storedUri = sessionStorage.getItem("neo4j_uri");
             const storedUsername = sessionStorage.getItem("neo4j_username");
             const storedPassword = sessionStorage.getItem("neo4j_password");
-
+            const token = localStorage.getItem("token");
             const updatedQuery = query.replace(/LIMIT \d+/i, `LIMIT ${limit}`);
             const response = await fetch("http://localhost:3001/query", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`},
               body: JSON.stringify({
-                cypher: updatedQuery,
-                uri: storedUri,
-                username: storedUsername,
-                password: storedPassword,
+                cypher,
+                uri,
+                username,
+                password,
               }),
             });
 
@@ -1225,15 +1250,13 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
         const storedUri = sessionStorage.getItem("neo4j_uri");
         const storedUsername = sessionStorage.getItem("neo4j_username");
         const storedPassword = sessionStorage.getItem("neo4j_password");
-
+        const token = localStorage.getItem("token");
         const response = await fetch("http://localhost:3001/query", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {"Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`},
           body: JSON.stringify({
-            cypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100",
-            uri: storedUri,
-            username: storedUsername,
-            password: storedPassword,
+            cypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100"
           }),
         });
 
@@ -1259,25 +1282,18 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
     }
     setError(null);
 
-    let storedUri = sessionStorage.getItem("neo4j_uri");
-    let storedUsername = sessionStorage.getItem("neo4j_username");
-    let storedPassword = sessionStorage.getItem("neo4j_password");
-
-    if (!storedUri || !storedUsername || !storedPassword) {
-      sessionStorage.clear();
-      window.location.href = "/";
-      return;
-    }
-
+    const token = localStorage.getItem("token");
     try {
+      console.log("Sending cypher:", query);
       const response = await fetch("http://localhost:3001/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`},
         body: JSON.stringify({
-          cypher: query,
-          uri: storedUri,
-          username: storedUsername,
-          password: storedPassword,
+          cypher : query,
+          uri,
+          username,
+          password,
         }),
       });
 
@@ -1384,17 +1400,6 @@ return (
           Run a query to see graph visualization.
         </div>
       )}
-    </div>
-
-
-
-    <div className="logout-section">
-      <button
-        onClick={handleLogout}
-        className="logout-btn"
-      >
-        Logout
-      </button>
     </div>
   </div>
 );
