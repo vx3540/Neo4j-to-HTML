@@ -1222,7 +1222,7 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`},
               body: JSON.stringify({
-                cypher,
+                cypher : updatedQuery,
                 uri,
                 username,
                 password,
