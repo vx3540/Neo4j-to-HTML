@@ -847,7 +847,8 @@ const subSvg = subWrapper
   .attr("height", height)
   .style("position", "absolute")
   .style("top", "0")
-  .style("left", "0");
+  .style("left", "0")
+  .style("overflow", "visible");
 
 // 🧲 Subgraph simulation
 const subSim = d3.forceSimulation(selectedNodes)
@@ -993,7 +994,25 @@ d3.select("#graph-container").call(subZoom.transform, d3.zoomIdentity.scale(0.7)
 
   dragHandler(subCards);
 
+  function updateSubRenderBounds() {
+    if (!selectedNodes.length) return;
+    const padding = 80;
+    const maxX = d3.max(selectedNodes, d => (Number.isFinite(d.x) ? d.x : 0)) + padding;
+    const maxY = d3.max(selectedNodes, d => (Number.isFinite(d.y) ? d.y : 0)) + padding;
+    const renderWidth = Math.max(width, maxX);
+    const renderHeight = Math.max(height, maxY);
+
+    subWrapper
+      .style("width", renderWidth + "px")
+      .style("height", renderHeight + "px");
+
+    subSvg
+      .attr("width", renderWidth)
+      .attr("height", renderHeight);
+  }
+
   subSim.on("tick", () => {
+    updateSubRenderBounds();
     subLinks
       .attr("x1", d => d.source.x)
       .attr("y1", d => d.source.y)
@@ -1031,7 +1050,8 @@ const fullSvg = fullWrapper
   .attr("height", height)
   .style("position", "absolute")
   .style("top", "0")
-  .style("left", "0");
+  .style("left", "0")
+  .style("overflow", "visible");
 
 // 🧲 Restore full simulation
 const fullSim = d3.forceSimulation(nodes)
@@ -1179,7 +1199,25 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
 
                   dragHandler(fullCards);
 
+                  function updateFullRenderBounds() {
+                    if (!nodes.length) return;
+                    const padding = 80;
+                    const maxX = d3.max(nodes, d => (Number.isFinite(d.x) ? d.x : 0)) + padding;
+                    const maxY = d3.max(nodes, d => (Number.isFinite(d.y) ? d.y : 0)) + padding;
+                    const renderWidth = Math.max(width, maxX);
+                    const renderHeight = Math.max(height, maxY);
+
+                    fullWrapper
+                      .style("width", renderWidth + "px")
+                      .style("height", renderHeight + "px");
+
+                    fullSvg
+                      .attr("width", renderWidth)
+                      .attr("height", renderHeight);
+                  }
+
                   fullSim.on("tick", () => {
+                    updateFullRenderBounds();
                     fullLinks
                       .attr("x1", d => d.source.x)
                       .attr("y1", d => d.source.y)
