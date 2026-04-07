@@ -510,9 +510,21 @@ data.forEach((item) => {
                     .style("opacity", 0.2); 
                 }, 4000);
 
-          // 🟢 Use a much larger virtual space for the full graph view
+          // Keep layout dynamic based on graph density instead of fixed force values.
           const width = ${allowSelection ? "window.innerWidth * 3" : "window.innerWidth * 0.9"};
           const height = ${allowSelection ? "window.innerHeight * 3" : "window.innerHeight * 0.9"};
+          const nodeCount = Math.max(nodes.length, 1);
+          const areaPerNode = (width * height) / nodeCount;
+          const chargeStrength = ${allowSelection ? "-2500" : "-Math.max(120, Math.min(900, areaPerNode / 55))"};
+          const linkDistance = ${allowSelection ? "350" : "Math.max(120, Math.min(340, Math.sqrt(areaPerNode) * 0.9))"};
+          const collideRadius = ${allowSelection ? "25" : "Math.max(20, Math.min(55, Math.sqrt(areaPerNode) * 0.12))"};
+
+          nodes.forEach((node) => {
+            if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+              node.x = Math.random() * width;
+              node.y = Math.random() * height;
+            }
+          });
 
 
           // Create a wrapper to hold SVG + node cards together for unified zoom
@@ -531,14 +543,14 @@ data.forEach((item) => {
             .attr('height', height)
             .style('position', 'absolute')
             .style('top', '0')
-            .style('left', '0');
+            .style('left', '0')
+            .style('overflow', 'visible');
 
   
           const simulation = d3.forceSimulation(nodes)
-        .force('charge', d3.forceManyBody().strength(${allowSelection ? -2500 : -600}))
-        .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('link', d3.forceLink(links).id(d => d.id).distance(${allowSelection ? 350 : 200}))
-        .force('collide', d3.forceCollide().radius(${allowSelection ? 25 : 20}).strength(1));
+        .force('charge', d3.forceManyBody().strength(chargeStrength))
+        .force('link', d3.forceLink(links).id(d => d.id).distance(linkDistance))
+        .force('collide', d3.forceCollide().radius(collideRadius).strength(0.9));
 
 
 
@@ -756,25 +768,26 @@ data.forEach((item) => {
 
           dragHandler(nodeCards);
 
-          function constrainToBoundary(d) {
-            const cardWidth = 150; 
-            const cardHeight = 100;
-            d.x = Math.max(0, Math.min(width - cardWidth, d.x));
-            d.y = Math.max(0, Math.min(height - cardHeight, d.y));
-          }
-  
-          function constrainLinkLabel(d) {
-            const labelPadding = 10; 
-            let midX = (d.source.x + d.target.x) / 2;
-            let midY = (d.source.y + d.target.y) / 2;
-            d.labelX = Math.max(labelPadding, Math.min(width - labelPadding, midX));
-            d.labelY = Math.max(labelPadding, Math.min(height - labelPadding, midY));
+          function updateRenderBounds() {
+            if (!nodes.length) return;
+            const padding = ${allowSelection ? 80 : 140};
+            const maxX = d3.max(nodes, d => (Number.isFinite(d.x) ? d.x : 0)) + padding;
+            const maxY = d3.max(nodes, d => (Number.isFinite(d.y) ? d.y : 0)) + padding;
+            const renderWidth = Math.max(width, maxX);
+            const renderHeight = Math.max(height, maxY);
+
+            graphWrapper
+              .style('width', renderWidth + 'px')
+              .style('height', renderHeight + 'px');
+
+            svg
+              .attr('width', renderWidth)
+              .attr('height', renderHeight);
           }
 
 
           simulation.on('tick', () => {
-            nodes.forEach(constrainToBoundary);
-            links.forEach(constrainLinkLabel);
+            updateRenderBounds();
 
             nodeCards
               .style('left', d => d.x + 'px')
