@@ -150,6 +150,20 @@ const ConfigurationPage = () => {
   const [contributionMessage, setContributionMessage] = useState("");
 
 useEffect(() => {
+  const savedUri = sessionStorage.getItem("neo4j_uri");
+  const savedUsername = sessionStorage.getItem("neo4j_username");
+  const savedPassword = sessionStorage.getItem("neo4j_password");
+
+  if (savedUri && savedUsername && savedPassword) {
+    setUri(savedUri);
+    setUsername(savedUsername);
+    setPassword(savedPassword);
+    setConnected(true);
+
+    fetchLabelsWithCredentials(savedUri, savedUsername, savedPassword);
+  }
+}, []);
+useEffect(() => {
   if (!selectedTemplate) {
     setConfigLabel("");
     setNodeProperties({ name: "" });
@@ -190,6 +204,31 @@ useEffect(() => {
   }
 }, []);
 
+const fetchLabelsWithCredentials = async (customUri, customUsername, customPassword) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("http://localhost:3001/connect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        uri: customUri,
+        username: customUsername,
+        password: customPassword
+      })
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch labels");
+
+    const data = await response.json();
+    setNodes(data.labels.map((label) => ({ label })));
+  } catch (err) {
+    console.error("Error fetching labels:", err);
+  }
+};
 
 const fetchLabels = async () => {
   try {
@@ -389,7 +428,6 @@ console.log("Response Data:", data);
         setConfigMessage("Successfully added.");
         setSelectedTemplate("");
         setNodeProperties({ name: "" });
-        fetchLabels();
       } else {
         setConfigMessage(data.error || "Failed to add. Please check input.");
       }
@@ -404,24 +442,30 @@ console.log("Response Data:", data);
     window.location.href = "/login";
   };
 
-  const handleBrowseFullGraph = () => {
+const handleBrowseFullGraph = () => {
+  let fixedUri = uri;
+  if (!uri.startsWith("neo4j://") && !uri.startsWith("bolt://")) {
+    fixedUri = "neo4j://" + uri;
+  }
+  sessionStorage.setItem("neo4j_uri", fixedUri);
+  sessionStorage.setItem("neo4j_username", username);
+  sessionStorage.setItem("neo4j_password", password);
 
-    navigate("/cypherquerytester", {
-      state: {
-        browseFullGraph: true,
-        uri,
-        username,
-        password,
-      },
-    });
-  };
-
+  navigate("/cypherquerytester", {
+    state: {
+      browseFullGraph: true,
+      uri: fixedUri,
+      username,
+      password,
+    },
+  });
+};
 
 const handleNodeClick = (node) => {
   localStorage.setItem("nodeLabel", node.label);
-  localStorage.setItem("uri", uri);
-localStorage.setItem("username", username);
-localStorage.setItem("password", password);
+  sessionStorage.setItem("neo4j_uri", uri);
+  sessionStorage.setItem("neo4j_username", username);
+  sessionStorage.setItem("neo4j_password", password);
   navigate("/cypherquerytester", {
     state: {
       selectedNode: node,

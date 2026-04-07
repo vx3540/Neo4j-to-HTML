@@ -205,9 +205,9 @@ function CypherQueryTester() {
   const { state } = useLocation();
   const {
     selectedNode = {},
-    uri = localStorage.getItem("uri") || "",
-    username = localStorage.getItem("username") || "",
-    password = localStorage.getItem("password") || "",
+    uri = sessionStorage.getItem("neo4j_uri") || localStorage.getItem("neo4j_uri") || "",
+    username = sessionStorage.getItem("neo4j_username") || localStorage.getItem("neo4j_username") || "",
+    password = sessionStorage.getItem("neo4j_password") || localStorage.getItem("neo4j_password") || "",
     browseFullGraph = false,
   } = state || {};
 
@@ -257,28 +257,28 @@ const fetchDynamicMenuOptions = async () => {
 
 const result = await response.json();
 
-if (!response.ok) {
-  console.error("Backend error:", result);
-  return;
-}
+console.log("Backend response:", result);
 
 const dataArray = Array.isArray(result) ? result : [];
 
-    const options = dataArray.map((record) => {
-      const relType = record.relType || record._fields?.[0];
-      const direction = record.direction || record._fields?.[1];
+const options = dataArray.map((record) => {
+  const relType = record.relType;
+  const direction = record.direction;
 
-      return {
-        name: `${relType} (${direction})`,
-        query: `MATCH (n:\`${nodeLabel}\`)${
-          direction === "OUTGOING" ? "-[r:" : "<-[r:"
-        }${relType}]${
-          direction === "OUTGOING" ? "->(m)" : "-(m)"
-        } RETURN n, r, m LIMIT 10`,
-      };
-    });
+  if (!relType || !direction) return null;
 
-    setMenuOptions(options);
+  return {
+    value: `${relType}-${direction}`,   // REQUIRED
+    label: `${relType} (${direction})`, // REQUIRED
+    query: `MATCH (n:\`${nodeLabel}\`)${
+      direction === "OUTGOING" ? "-[r:" : "<-[r:"
+    }${relType}]${
+      direction === "OUTGOING" ? "->(m)" : "-(m)"
+    } RETURN n, r, m LIMIT 10`,
+  };
+}).filter(Boolean);
+
+setMenuOptions(options);
   } catch (error) {
     console.error("Error fetching dynamic menu options:", error);
   }
@@ -1293,34 +1293,40 @@ d3.select("#graph-container").call(fullZoom.transform, d3.zoomIdentity.scale(0.7
       return () => window.removeEventListener("message", handleMessage);
     }, [query, browseFullGraph]);
 
+useEffect(() => {
+  fetchDynamicMenuOptions();
+}, [nodeLabel]);
 
-  useEffect(() => {
+useEffect(() => {
   if (browseFullGraph) {
     const fetchFullGraph = async () => {
       try {
-        const storedUri = sessionStorage.getItem("neo4j_uri");
-        const storedUsername = sessionStorage.getItem("neo4j_username");
-        const storedPassword = sessionStorage.getItem("neo4j_password");
+        const storedUri = uri || sessionStorage.getItem("neo4j_uri") || localStorage.getItem("neo4j_uri");
+        const storedUsername = username || sessionStorage.getItem("neo4j_username") || localStorage.getItem("neo4j_username");
+        const storedPassword = password || sessionStorage.getItem("neo4j_password") || localStorage.getItem("neo4j_password");
         const token = localStorage.getItem("token");
         const response = await fetch("http://localhost:3001/query", {
           method: "POST",
           headers: {"Content-Type": "application/json",
             "Authorization": `Bearer ${token}`},
           body: JSON.stringify({
-            cypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100"
+            cypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100",
+            uri: storedUri,
+            username: storedUsername,
+            password: storedPassword,
           }),
         });
-
+ 
         const data = await response.json();
         setResult(data);
         generateResultsPage(data, { allowZoom: true, allowSelection: true });
-
+ 
       } catch (err) {
         setError("Error loading full graph.");
         console.error("Error:", err);
       }
     };
-
+ 
     fetchFullGraph();
   }
 }, [browseFullGraph]);
@@ -1397,18 +1403,17 @@ return (
     {!browseFullGraph && (
       <div className="query-controls">
         <SimpleSelect
-  value={queryType}
-  onChange={(val) => {
-    setQueryType(val);
-    const selectedOption = menuOptions.find((opt) => opt.name === val);
-    setQuery(selectedOption ? selectedOption.query : "");
-  }}
-  options={menuOptions.map((option) => ({
-    value: option.name,
-    label: option.name,
-  }))}
-  placeholder="Select Query Type"
-/>
+            value={queryType}
+            onChange={(val) => {
+              setQueryType(val);
+
+              const selected = menuOptions.find(o => o.value === val);
+              if (selected) {
+                setQuery(selected.query);
+              }
+            }}
+            options={menuOptions}
+          />
 
 
         <button
