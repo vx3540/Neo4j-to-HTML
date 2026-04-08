@@ -126,6 +126,7 @@ const ConfigurationPage = () => {
   const [uri, setUri] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [connectionName, setConnectionName] = useState("");
   const [nodes, setNodes] = useState([]);
   const [connected, setConnected] = useState(false);
   const [connections, setConnections] = useState([]);
@@ -324,7 +325,7 @@ console.log("Response Data:", data);
             uri: customUri || uri,
             username: customUsername || username,
             password: customPassword || password,
-            name: customUri || uri
+            name: connectionName.trim() || customUri || uri
           })
         });
 
@@ -439,6 +440,9 @@ console.log("Response Data:", data);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+sessionStorage.removeItem("neo4j_uri");
+sessionStorage.removeItem("neo4j_username");
+sessionStorage.removeItem("neo4j_password");
     window.location.href = "/login";
   };
 
@@ -626,6 +630,7 @@ if (loading) {
                 setUri(selected.uri);
                 setUsername(selected.username);
                 setPassword(selected.password || "");
+                setConnectionName(selected.name || "");
               }}
               style={{
                 width: "100%",
@@ -637,10 +642,26 @@ if (loading) {
               <option value="">Select saved connection</option>
               {connections.map(c => (
                 <option key={c.id} value={c.id}>
-                  {c.name || c.uri}
+                  {c.name && c.name !== c.uri
+                    ? `${c.name} — ${c.uri}`
+                    : c.uri}
                 </option>
               ))}
             </select>
+              <input
+                style={{
+                  width: "100%",
+                  maxWidth: "400px",
+                  padding: "1rem 1.25rem",
+                  border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  fontSize: "1.4rem",
+                }}
+                type="text"
+                placeholder="Connection name (e.g., My Production DB)"
+                value={connectionName}
+                onChange={(e) => setConnectionName(e.target.value)}
+              />
               <input
                 style={{
                   width: "100%",
