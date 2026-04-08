@@ -443,18 +443,14 @@ console.log("Response Data:", data);
   };
 
 const handleBrowseFullGraph = () => {
-  let fixedUri = uri;
-  if (!uri.startsWith("neo4j://") && !uri.startsWith("bolt://")) {
-    fixedUri = "neo4j://" + uri;
-  }
-  sessionStorage.setItem("neo4j_uri", fixedUri);
+  sessionStorage.setItem("neo4j_uri", uri);
   sessionStorage.setItem("neo4j_username", username);
   sessionStorage.setItem("neo4j_password", password);
 
   navigate("/cypherquerytester", {
     state: {
       browseFullGraph: true,
-      uri: fixedUri,
+      uri,
       username,
       password,
     },
