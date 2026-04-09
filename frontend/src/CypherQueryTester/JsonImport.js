@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./JsonImport.css";
+import { generateCypher, validateJson } from "./utils/jsonImportUtils";
 
+// Handles JSON upload, validation, and insertion into Neo4j.
 export default function JsonImportPage() {
   const navigate = useNavigate();
 
@@ -11,45 +13,7 @@ export default function JsonImportPage() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const validateJson = (obj) => {
-    if (!obj || typeof obj !== "object") {
-      throw new Error("JSON must be an object");
-    }
-
-    if (!Array.isArray(obj.nodes) || !Array.isArray(obj.relationships)) {
-      throw new Error("JSON must contain nodes[] and relationships[]");
-    }
-
-    const idSet = new Set();
-
-    obj.nodes.forEach((n, idx) => {
-      if (!n.tempId || !n.label) {
-        throw new Error(`Node at index ${idx} missing tempId or label`);
-      }
-      if (idSet.has(n.tempId)) {
-        throw new Error(`Duplicate tempId: ${n.tempId}`);
-      }
-      idSet.add(n.tempId);
-      if (n.properties && typeof n.properties !== "object") {
-        throw new Error(`Node properties must be an object (tempId: ${n.tempId})`);
-      }
-    });
-
-    obj.relationships.forEach((r, idx) => {
-      if (!r.from || !r.to || !r.type) {
-        throw new Error(`Relationship at index ${idx} missing from/to/type`);
-      }
-      if (!idSet.has(r.from) || !idSet.has(r.to)) {
-        throw new Error(
-          `Relationship references unknown tempId (${r.from} → ${r.to})`
-        );
-      }
-      if (r.properties && typeof r.properties !== "object") {
-        throw new Error(`Relationship properties must be an object`);
-      }
-    });
-  };
-
+  // Reads a JSON file from disk and validates the parsed graph payload.
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -71,6 +35,7 @@ export default function JsonImportPage() {
     reader.readAsText(file);
   };
 
+  // Validates JSON while the user edits raw input text.
   const handleJsonEdit = (value) => {
     setRawJson(value);
     try {
@@ -84,61 +49,7 @@ export default function JsonImportPage() {
     }
   };
 
-
-
-const generateCypher = () => {
-  if (!parsed) return "";
-
-  const toCypherMap = (obj) => {
-    if (!obj || Object.keys(obj).length === 0) return "{}";
-    const pairs = Object.entries(obj).map(([k, v]) => {
-      const val =
-        typeof v === "string" ? `"${v.replace(/"/g, '\\"')}"` : v;
-      return `${k}: ${val}`;
-    });
-    return `{${pairs.join(", ")}}`;
-  };
-
-  const nodeLines = parsed.nodes.map((n) => {
-    const entries = Object.entries(n.properties || {});
-    if (entries.length === 0) {
-      throw new Error(`Node ${n.tempId} has no properties to merge on`);
-    }
-
-    const [key, value] = entries[0]; // identity key
-    const val =
-      typeof value === "string"
-        ? `"${value.replace(/"/g, '\\"')}"`
-        : value;
-
-    return `
-MERGE (${n.tempId}:${n.label} { ${key}: ${val} })
-SET ${n.tempId} += ${toCypherMap(n.properties)}
-`;
-  });
-
-  const relLines = parsed.relationships.map(
-    (r) => `
-MERGE (${r.from})-[rel_${r.from}_${r.to}:${r.type}]->(${r.to})
-SET rel_${r.from}_${r.to} += ${toCypherMap(r.properties || {})}
-`
-  );
-
-  const cypher = `
-${nodeLines.join("\n")}
-WITH ${parsed.nodes.map((n) => n.tempId).join(", ")}
-${relLines.join("\n")}
-`;
-
-  console.log("Generated Cypher:\n", cypher);
-  return cypher;
-};
-
-
-
-
-
-
+  // Sends the generated Cypher script to backend for Neo4j insertion.
   const pushToNeo4j = async () => {
     if (!parsed) return;
 
@@ -153,35 +64,34 @@ ${relLines.join("\n")}
         throw new Error("Neo4j connection not found. Please reconnect.");
       }
 
-      const cypher = generateCypher();
+      const cypher = generateCypher(parsed);
+      console.log("Generated Cypher:\n", cypher);
 
-const res = await fetch("http://localhost:3001/query", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    cypher,
-    uri,
-    username,
-    password,
-  }),
-});
+      const res = await fetch("http://localhost:3001/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cypher,
+          uri,
+          username,
+          password,
+        }),
+      });
 
-if (!res.ok) {
-  const errorData = await res.json();
-  throw new Error(errorData.error || "Neo4j insertion failed");
-}
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Neo4j insertion failed");
+      }
 
-const response = await res.json();
-setStatus("✅ Data inserted successfully into Neo4j");}
-
-catch (err) {
-      setStatus("❌ " + (err.message || "Insertion failed"));
-      console.log(err.message)
+      await res.json();
+      setStatus("Data inserted successfully into Neo4j");
+    } catch (err) {
+      setStatus("Error: " + (err.message || "Insertion failed"));
+      console.log(err.message);
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="json-import-container">
