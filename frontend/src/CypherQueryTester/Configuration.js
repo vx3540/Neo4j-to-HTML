@@ -338,6 +338,9 @@ const handleShowManualConfig = () => {
 
 // Navigates to the JSON import flow.
 const handleImportJson = () => {
+  sessionStorage.setItem("neo4j_uri", uri);
+  sessionStorage.setItem("neo4j_username", username);
+  sessionStorage.setItem("neo4j_password", password);
   navigate("/import-json");
 };
 

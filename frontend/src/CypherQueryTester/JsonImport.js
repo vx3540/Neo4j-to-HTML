@@ -56,9 +56,13 @@ export default function JsonImportPage() {
     setLoading(true);
     setStatus("");
     try {
-      const uri = sessionStorage.getItem("neo4j_uri");
-      const username = sessionStorage.getItem("neo4j_username");
-      const password = sessionStorage.getItem("neo4j_password");
+      const uri =
+        sessionStorage.getItem("neo4j_uri") || localStorage.getItem("neo4j_uri");
+      const username =
+        sessionStorage.getItem("neo4j_username") || localStorage.getItem("neo4j_username");
+      const password =
+        sessionStorage.getItem("neo4j_password") || localStorage.getItem("neo4j_password");
+      const token = localStorage.getItem("token");
 
       if (!uri || !username || !password) {
         throw new Error("Neo4j connection not found. Please reconnect.");
@@ -69,7 +73,10 @@ export default function JsonImportPage() {
 
       const res = await fetch("http://localhost:3001/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           cypher,
           uri,

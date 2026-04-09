@@ -37,7 +37,11 @@ NtH is a web-based tool that allows users to execute Neo4j Cypher queries and vi
 
 ## Usage
 ### Start the Backend Server
-Run the Express.js server:
+Before starting the backend, set the JWT secret in the terminal:
+```
+export JWT_SECRET=your_secret_key_here
+```
+Then run the Express.js server:
 ```sh
    cd backend
    node index.js   
