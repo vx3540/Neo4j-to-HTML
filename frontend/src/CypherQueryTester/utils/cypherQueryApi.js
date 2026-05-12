@@ -1,5 +1,4 @@
-const QUERY_API_URL = "http://localhost:3001/query";
-
+const QUERY_API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/query";
 // Executes a Cypher query against the backend query endpoint.
 export const runCypherQuery = async ({ cypher, uri, username, password }) => {
   const token = localStorage.getItem("token");
