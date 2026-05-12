@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3001";
+import { buildApiUrl } from "../../utils/apiBaseUrl";
 
 // Builds authorization headers used by protected backend endpoints.
 const buildAuthHeaders = () => {
@@ -12,7 +12,7 @@ const buildAuthHeaders = () => {
 
 // Loads all saved Neo4j connection records for the signed-in user.
 export const fetchSavedConnections = async () => {
-  const response = await fetch(`${API_BASE_URL}/connections`, {
+  const response = await fetch(buildApiUrl("/connections"), {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
@@ -23,7 +23,7 @@ export const fetchSavedConnections = async () => {
 
 // Calls the connect endpoint and returns both response metadata and labels payload.
 export const fetchConnectionLabels = async ({ uri, username, password }) => {
-  const response = await fetch(`${API_BASE_URL}/connect`, {
+  const response = await fetch(buildApiUrl("/connect"), {
     method: "POST",
     headers: buildAuthHeaders(),
     body: JSON.stringify({
@@ -39,7 +39,7 @@ export const fetchConnectionLabels = async ({ uri, username, password }) => {
 
 // Persists a new Neo4j connection record for quick reuse.
 export const saveConnectionRecord = async ({ uri, username, password, name }) => {
-  return fetch(`${API_BASE_URL}/save-connection`, {
+  return fetch(buildApiUrl("/save-connection"), {
     method: "POST",
     headers: buildAuthHeaders(),
     body: JSON.stringify({
@@ -53,7 +53,7 @@ export const saveConnectionRecord = async ({ uri, username, password, name }) =>
 
 // Sends user-contributed configuration notes to the backend service.
 export const sendContributionText = async ({ text }) => {
-  const response = await fetch(`${API_BASE_URL}/sendContribution`, {
+  const response = await fetch(buildApiUrl("/sendContribution"), {
     method: "POST",
     headers: buildAuthHeaders(),
     body: JSON.stringify({ text }),
@@ -64,7 +64,7 @@ export const sendContributionText = async ({ text }) => {
 
 // Executes a configuration Cypher statement and returns response status with payload.
 export const runConfigurationQuery = async ({ cypher, uri, username, password }) => {
-  const response = await fetch(`${API_BASE_URL}/query`, {
+  const response = await fetch(buildApiUrl("/query"), {
     method: "POST",
     headers: buildAuthHeaders(),
     body: JSON.stringify({
